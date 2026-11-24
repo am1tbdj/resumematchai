@@ -195,6 +195,10 @@ if st.button("🔎 Analyze match", type="primary", use_container_width=True):
             result = ai_evaluate(resume, jd, api_key, model) if mode.startswith("AI") else demo_evaluate(resume, jd)
         except Exception as e:
             st.error(analysis_error_message(e))
+st.caption(
+    f"Error type: {type(e).__name__} | "
+    f"HTTP code: {getattr(e, 'code', 'unknown')}"
+)
             st.stop()
     st.session_state["last_result"] = result
     st.session_state["last_mode"] = mode
