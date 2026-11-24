@@ -186,6 +186,36 @@ with right:
     st.subheader("2. Job description")
     jd = st.text_area("Paste the target job description", value=SAMPLE_JD, height=340)
 
+
+with st.expander("Milestone 2 prompt comparison"):
+    st.write("Run three saved prompt drafts on the same built-in sample. This makes three Groq API requests and uses your account's quota. Results include the actual output and timing; no API key is saved in the download.")
+    if st.button("Run v1, v2 and v3"):
+        if not mode.startswith("AI") or not api_key:
+            st.warning("Select AI-powered (Groq API) and enter your Groq key in the sidebar first.")
+        else:
+            from prompt_experiments import run_comparison
+            progress = st.empty()
+            try:
+                st.session_state["prompt_experiment"] = run_comparison(
+                    api_key, model, SAMPLE_RESUME, SAMPLE_JD,
+                    on_progress=lambda version: progress.info(f"Running {version}..."),
+                )
+                progress.empty()
+            except Exception as e:
+                progress.empty()
+                st.error(analysis_error_message(e))
+    if "prompt_experiment" in st.session_state:
+        experiment = st.session_state["prompt_experiment"]
+        for record in experiment["records"]:
+            st.write(f"**{record['version']}**: {record['status']} | {record['elapsed_seconds']} seconds")
+            if record["status"] != "error":
+                st.write(f"JSON object: {record['valid_json_object']} | Report fields: {record['report_fields_present']}/8")
+                st.code(record["output"], language="text")
+            else:
+                st.write(f"Error: {record['error_type']} | HTTP: {record['http_code']}")
+        st.download_button("Download real prompt comparison results", json.dumps(experiment, indent=2),
+                           file_name="prompt_comparison_results.json", mime="application/json")
+
 if st.button("🔎 Analyze match", type="primary", use_container_width=True):
     resume = typed_resume.strip()
     if uploaded is not None:
